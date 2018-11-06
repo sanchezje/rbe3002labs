@@ -2,11 +2,11 @@
 import math
 import copy
 import rospy
-from std_msgs.msg import Twist, PoseStamped, Pose, PoseWithCovariance
+from geometry_msgs.msg import Twist, PoseStamped, Pose, PoseWithCovariance
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion
 import tf
-import tf.transformations import euler_from_quaternion
+from tf.transformations import euler_from_quaternion
 
 
 
@@ -24,10 +24,10 @@ class Robot:
         Set up the node here
 
         """
-        odom_sub = rospy.Subscriber('odom', Odometry, odom_callback)
-        goal_sub = rospy.Subscriber('goal', PoseStamped, nav_to_pose)
-        cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-        rospy.init_node('movememt', anonymous=True)
+        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
+        self.goal_sub = rospy.Subscriber('goal', PoseStamped, self.nav_to_pose)
+        self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+        self.node = rospy.init_node('movememt', anonymous=True)
 
 
 
@@ -43,29 +43,29 @@ class Robot:
         # goal will be a PoseStamped message
         # we need to extract a position and a rotation from it
         goal_pose = goal.pose
-        goal_posn = pose.position #x y z
+        goal_posn = goal_pose.position #x y z
 
-        quat = pose.orientation
+        quat = goal_pose.orientation
         q = [quat.x, quat.y, quat.z, quat.w]
         goal_rots = euler_from_quaternion(q) # 0=yaw 1=pitch 2=roll
         goal_rot = goal_rots[0]
 
         # determine angle to spin from start to line to goal
         # relative to the global coordinate system (so 0-2pi)
-        path_angle = atan2(  (goal_posn.y - py)  / (goal_posn.x - px))
+        path_angle = math.atan2(  (goal_posn.y - self.py) , (goal_posn.x - self.px))
 
         # rotate to face the goal vector
-        rotate(self, path_angle-yaw)
+        self.rotate(self, path_angle-self.yaw)
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
-        goal_dist = sqrt( (goal_posn.x - px)^2 + (goal_posn.y - py)^2  )
+        goal_dist = sqrt( (goal_posn.x - self.px)^2 + (goal_posn.y - self.py)^2  )
 
         # drive in a striaght line the appropriate distance
-        drive_straight(self, speed, goal_dist)
+        self.drive_straight(self, speed, goal_dist)
 
         # rotate to satisfy the required final pose
-        rotate(self, goal_rot - yaw) #note: yaw *should be* path_angle
+        self.rotate(self, goal_rot - self.yaw) #note: yaw *should be* path_angle
 
 
 
@@ -83,7 +83,7 @@ class Robot:
         start_time = ros.Time.now()
         leg_time = distance/speed
 
-        while ros.Time.now() - start_time < leg_time
+        while ros.Time.now() - start_time < leg_time:
             msg = Twist()
             msg.linear.x = speed
             cmd_pub.publish(msg)
@@ -103,15 +103,15 @@ class Robot:
 
         delta_angle = yaw - (start_angle + angle)
 
-        if delta_angle > 0
+        if delta_angle > 0:
             # we want positive rotation
             omega = abs(omega)
 
-        if delta_angle < 0
+        if delta_angle < 0:
             # we want negative rotation
             omega = - abs(omega)
 
-        while abs(yaw - (start_angle + angle)) > 0.05 #about a 3deg threshold
+        while abs(yaw - (start_angle + angle)) > 0.05: #about a 3deg threshold
             msg = Twist()
             # @TODO going to guess angular.x corresponds to yaw, need to verify
             msg.angular.x = omega
@@ -128,12 +128,12 @@ class Robot:
         """
         # consume odometry message and extract useful info
         # extract the x and y position we're at
-        px = data.pose.pose.position.x
-        py = data.pose.pose.position.y
+        self.px = msg.pose.pose.position.x
+        self.py = msg.pose.pose.position.y
         # extract the quaternion and make it usable
-        quat = data.pose.pose.orientation
+        quat = msg.pose.pose.orientation
         q = [quat.x, quat.y, quat.z, quat.w]
-        roll, pitch, yaw = euler_from_quaternion(q)
+        self.roll, self.pitch, self.yaw = euler_from_quaternion(q)
 
 
 
@@ -142,4 +142,5 @@ if __name__ == '__main__':
     try:
         rospy.spin() #exist always, only do things if
                      #recieve messages to do so via callbacks
-    pass
+    except:
+        pass
