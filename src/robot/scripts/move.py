@@ -34,7 +34,11 @@ class Robot:
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movement', anonymous=True)
 
+<<<<<<< HEAD
     def get_yaw(self):
+=======
+    def get_yaw(self)
+>>>>>>> 01dacd1c1f7dc5720a62e4962335e394bb968564
         if self.yaw < 0:
             return 2*math.pi + self.yaw
         else
