@@ -34,14 +34,10 @@ class Robot:
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movement', anonymous=True)
 
-<<<<<<< HEAD
     def get_yaw(self):
-=======
-    def get_yaw(self)
->>>>>>> 01dacd1c1f7dc5720a62e4962335e394bb968564
         if self.yaw < 0:
             return 2*math.pi + self.yaw
-        else
+        else:
             return self.yaw
 
 
@@ -64,7 +60,7 @@ class Robot:
         q = [quat.x, quat.y, quat.z, quat.w]
         goal_rots = euler_from_quaternion(q) # 0=yaw 1=pitch 2=roll
         print("goal_rots = ", goal_rots)
-        goal_rot = goal_rots[0] # this will be the final yaw
+        goal_rot = goal_rots[2] # this will be the final yaw
 
         ## CHECK FOR "OVERFLOW"
         if goal_rot > math.pi:
@@ -80,12 +76,13 @@ class Robot:
 
         print("my x = ", self.px)
         print("my y = ", self.py)
-        print("my rot = ", get_yaw()*180/math.pi)
+        print("my rot = ", self.yaw*180/math.pi)
 
         print("path_angle = ", (path_angle*180)/math.pi)
 
         # rotate to face the goal vector
-        self.rotate(path_angle - get_yaw())
+        diff = path_angle - self.yaw
+        self.rotate(diff) # rotate to the specified angle
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
@@ -136,25 +133,25 @@ class Robot:
         # check starting Odometry
         # figure out which way to turn
 
-        delta_angle = angle - get_yaw()
+        diff = angle # diff is a quantity between -2pi and 2pi
 
-        angular_vel = self.omega
+        if diff > math.pi:
+            diff = diff - 2*math.pi
+        else if diff < math.pi:
+            diff = diff + 2*math.pi
+        else
+            pass
 
-        if delta_angle > 0:
-            # we want positive rotation
-            self.omega = abs(angular_vel)
-
-        if delta_angle < 0:
-            # we want negative rotation
-            self.omega = -1 * abs(angular_vel)
+        self.omega = math.copysign(self.omega, diff)
 
         ## USING A THRESHOLD BASED ON ODOMETRY
+        # start_angle = self.yaw
 
-        while abs(angle - get_yaw()) > 0.05: #about a 3deg threshold
+        while abs(diff - self.yaw) > 0.05: #about a 3deg threshold
         # while abs(abs(angle) - abs(self.yaw)) > 0.05: #about a 3deg threshold
             print("angle = ",angle)
-            print("my yaw =", get_yaw())
-            print(angle - get_yaw())
+            print("my yaw =", self.yaw)
+            print(angle - self.yaw)
             msg = Twist()
             # angular.z corresponds to yaw. I dun messed up
             msg.angular.z = self.omega
