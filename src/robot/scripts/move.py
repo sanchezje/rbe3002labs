@@ -130,10 +130,10 @@ class Robot:
         self.cmd_pub.publish(msg)
 
         while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
+            pass
 
 
     def odom_callback(self, msg):
-
         """
         update the state of the robot
         :type msg: Odom
