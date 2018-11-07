@@ -114,7 +114,7 @@ class Robot:
 
 
 
-    def rotate(self, path_angle):
+    def rotate(self, angle):
         """
         Rotate in place
         to the specified angle relative to the global coordinate system
@@ -125,11 +125,11 @@ class Robot:
         # figure out which way to turn
 
         #diff is a quantity between -2pi and 2pi
-        diff = path_angle - self.yaw
+        diff = angle - self.yaw
 
         if diff > math.pi:
             diff = diff - 2*math.pi
-        elif diff < math.pi:
+        elif diff < -1*math.pi:
             diff = diff + 2*math.pi
         else:
             pass
@@ -141,11 +141,11 @@ class Robot:
         msg.angular.z = self.omega
         self.cmd_pub.publish(msg)
 
-        while abs(path_angle - self.yaw) > 0.05: #about a 3deg threshold
+        while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
         # while abs(abs(angle) - abs(self.yaw)) > 0.05: #about a 3deg threshold
-            print("target = ",path_angle)
+            print("target = ", angle)
             print("my yaw =", self.yaw)
-            print(path_angle - self.yaw)
+            print(angle - self.yaw)
 
 
 
