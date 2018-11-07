@@ -68,7 +68,7 @@ class Robot:
         goal_dist = math.sqrt( pow((goal_posn.x - self.px),2) + pow((goal_posn.y - self.py), 2)  )
 
         # drive in a striaght line the appropriate distance
-        self.drive_straight(speed, goal_dist)
+        self.drive_straight(self.speed, goal_dist)
 
         # rotate to satisfy the required final pose
         self.rotate(goal_rot - self.yaw) #note: yaw *should be* path_angle
@@ -86,10 +86,10 @@ class Robot:
         :return:
         """
         # looks like we're going to do an open loop drive
-        start_time = ros.Time.now()
+        start_time = rospy.get_time()
         leg_time = distance/speed
 
-        while ros.Time.now() - start_time < leg_time:
+        while rospy.get_time() - start_time < leg_time:
             msg = Twist()
             msg.linear.x = speed
             self.cmd_pub.publish(msg)
