@@ -1,0 +1,5 @@
+<launch>
+  <include file="$(find turtlebot3_fake)/launch/turtlebot3_fake.launch"/>
+  <include file="$(find turtlebot3_gazebo)/launch/turtlebot3_empty_world.launch"/>
+  <node name="movement" pkg="robot" type="move.py"/>
+</launch>

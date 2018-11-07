@@ -1,0 +1,4 @@
+<launch>
+  <include file="$(find turtlebot3_bringup)/launch/turtlebot3_model.launch"/>
+  <node name="movement" pkg="robot" type="move.py"/>
+</launch>
