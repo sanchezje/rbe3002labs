@@ -149,7 +149,6 @@ class Robot:
         self.roll, self.pitch, self.yaw = euler_from_quaternion(q)
 
 
-
 if __name__ == '__main__':
     r = Robot()
     try:
