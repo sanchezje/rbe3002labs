@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import print_function
+
 import math
 import copy
 import rospy
@@ -11,13 +13,6 @@ from tf.transformations import euler_from_quaternion
 
 
 class Robot:
-    px = 0
-    py = 0
-    roll = 0
-    pitch = 0
-    yaw = 0
-    speed = 0.1 # 10cm/s linear velocity
-    omega = 1 # 1 rad/s angular velocity
 
     def __init__(self):
         """"
@@ -28,6 +23,14 @@ class Robot:
         self.goal_sub = rospy.Subscriber('goal', PoseStamped, self.nav_to_pose)
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movememt', anonymous=True)
+
+        self.px = 0
+        self.py = 0
+        self.roll = 0
+        self.pitch = 0
+        self.yaw = 0
+        self.speed = 0.1 # 10cm/s linear velocity
+        self.omega = 1 # 1 rad/s angular velocity
 
 
 
@@ -55,17 +58,18 @@ class Robot:
         path_angle = math.atan2(  (goal_posn.y - self.py) , (goal_posn.x - self.px))
 
         # rotate to face the goal vector
-        self.rotate(self, path_angle-self.yaw)
+
+        self.rotate(path_angle - self.yaw)
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
         goal_dist = sqrt( (goal_posn.x - self.px)^2 + (goal_posn.y - self.py)^2  )
 
         # drive in a striaght line the appropriate distance
-        self.drive_straight(self, speed, goal_dist)
+        self.drive_straight(speed, goal_dist)
 
         # rotate to satisfy the required final pose
-        self.rotate(self, goal_rot - self.yaw) #note: yaw *should be* path_angle
+        self.rotate(goal_rot - self.yaw) #note: yaw *should be* path_angle
 
 
 
@@ -86,7 +90,7 @@ class Robot:
         while ros.Time.now() - start_time < leg_time:
             msg = Twist()
             msg.linear.x = speed
-            cmd_pub.publish(msg)
+            self.cmd_pub.publish(msg)
 
 
 
@@ -101,21 +105,21 @@ class Robot:
         # check starting Odometry
         # figure out which way to turn
 
-        delta_angle = yaw - (start_angle + angle)
+        delta_angle = angle - self.yaw
 
         if delta_angle > 0:
             # we want positive rotation
-            omega = abs(omega)
+            self.omega = abs(self.omega)
 
         if delta_angle < 0:
             # we want negative rotation
-            omega = - abs(omega)
+            self.omega = - abs(self.omega)
 
-        while abs(yaw - (start_angle + angle)) > 0.05: #about a 3deg threshold
+        while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
             msg = Twist()
             # @TODO going to guess angular.x corresponds to yaw, need to verify
-            msg.angular.x = omega
-            cmd_pub.publish(msg)
+            msg.angular.x = self.omega
+            self.cmd_pub.publish(msg)
 
 
 
@@ -141,6 +145,9 @@ if __name__ == '__main__':
     r = Robot()
     try:
         rospy.spin() #exist always, only do things if
-                     #recieve messages to do so via callbacks
+        #recieve messages to do so via callbacks
+        # x = r.yaw
+        # print(x)
+
     except:
         pass
