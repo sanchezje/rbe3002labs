@@ -34,12 +34,6 @@ class Robot:
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movement', anonymous=True)
 
-    def get_yaw(self):
-        if self.yaw < 0:
-            return 2*math.pi + self.yaw
-        else:
-            return self.yaw
-
 
 
     def nav_to_pose(self, goal):
@@ -55,24 +49,21 @@ class Robot:
         # we need to extract a position and a rotation from it
         goal_pose = goal.pose
         goal_posn = goal_pose.position #x y z
-
         quat = goal_pose.orientation
+
         q = [quat.x, quat.y, quat.z, quat.w]
         goal_rots = euler_from_quaternion(q) # 0=yaw 1=pitch 2=roll
         print("goal_rots = ", goal_rots)
         goal_rot = goal_rots[2] # this will be the final yaw
 
-        ## CHECK FOR "OVERFLOW"
-        if goal_rot > math.pi:
-            goal_rot = 2*math.pi - goal_rot
-
         # determine angle to spin from start to line to goal
-        # relative to the global coordinate system (so 0-2pi)
+        # relative to the global coordinate system (so -pi to pi because atan2)
         path_angle = math.atan2(  (goal_posn.y - self.py) , (goal_posn.x - self.px))
 
         print("goal x = ", goal_posn.x)
         print("goal y = ", goal_posn.y)
         print("goal rot = ", goal_rot*180/math.pi)
+
 
         print("my x = ", self.px)
         print("my y = ", self.py)
@@ -82,19 +73,19 @@ class Robot:
 
         # rotate to face the goal vector
         diff = path_angle - self.yaw
-        self.rotate(diff) # rotate to the specified angle
+        self.rotate(path_angle) # rotate to the specified angle
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
-        # goal_dist = math.sqrt( pow((goal_posn.x - self.px),2) + pow((goal_posn.y - self.py), 2)  )
+        goal_dist = math.sqrt( pow((goal_posn.x - self.px),2) + pow((goal_posn.y - self.py), 2)  )
 
         # print("goal dist = ", goal_dist)
 
         # drive in a striaght line the appropriate distance
-        # self.drive_straight(self.speed, goal_dist)
+        self.drive_straight(self.speed, goal_dist)
 
         # # rotate to satisfy the required final pose
-        # self.rotate(goal_rot - self.yaw) #note: yaw *should be* path_angle
+        self.rotate(goal_rot) #note: yaw *should be* path_angle
         msg = Twist()
         self.cmd_pub.publish(msg)
 
@@ -123,7 +114,7 @@ class Robot:
 
 
 
-    def rotate(self, angle):
+    def rotate(self, path_angle):
         """
         Rotate in place
         to the specified angle relative to the global coordinate system
@@ -133,29 +124,29 @@ class Robot:
         # check starting Odometry
         # figure out which way to turn
 
-        diff = angle # diff is a quantity between -2pi and 2pi
+        #diff is a quantity between -2pi and 2pi
+        diff = path_angle - self.yaw
 
         if diff > math.pi:
             diff = diff - 2*math.pi
-        else if diff < math.pi:
+        elif diff < math.pi:
             diff = diff + 2*math.pi
-        else
+        else:
             pass
-
+        # assign the proper direction to rotate
         self.omega = math.copysign(self.omega, diff)
+        msg = Twist()
+        # pack a twist message and send it
+        # angular.z corresponds to yaw. I dun messed up
+        msg.angular.z = self.omega
+        self.cmd_pub.publish(msg)
 
-        ## USING A THRESHOLD BASED ON ODOMETRY
-        # start_angle = self.yaw
-
-        while abs(diff - self.yaw) > 0.05: #about a 3deg threshold
+        while abs(path_angle - self.yaw) > 0.05: #about a 3deg threshold
         # while abs(abs(angle) - abs(self.yaw)) > 0.05: #about a 3deg threshold
-            print("angle = ",angle)
+            print("target = ",path_angle)
             print("my yaw =", self.yaw)
-            print(angle - self.yaw)
-            msg = Twist()
-            # angular.z corresponds to yaw. I dun messed up
-            msg.angular.z = self.omega
-            self.cmd_pub.publish(msg)
+            print(path_angle - self.yaw)
+
 
 
 
