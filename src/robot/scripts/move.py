@@ -30,7 +30,7 @@ class Robot:
         self.omega = 1 # 1 rad/s angular velocity
 
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
-        self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.nav_to_pose)
+        self.goal_sub = rospy.Subscriber('/rvis/goal', PoseStamped, self.nav_to_pose)
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movement', anonymous=True)
 
@@ -131,6 +131,8 @@ class Robot:
         if delta_angle < 0:
             # we want negative rotation
             self.omega = -1 * abs(angular_vel)
+
+        ## USING A THRESHOLD BASED ON ODOMETRY
 
         while abs(abs(angle) - abs(self.yaw)) > 0.1: #about a 3deg threshold
             # print("angle = ",angle)
