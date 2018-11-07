@@ -30,7 +30,7 @@ class Robot:
         self.omega = 1 # 1 rad/s angular velocity
 
         self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
-        self.goal_sub = rospy.Subscriber('goal', PoseStamped, self.nav_to_pose)
+        self.goal_sub = rospy.Subscriber('/move_base_simple/goal', PoseStamped, self.nav_to_pose)
         self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
         self.node = rospy.init_node('movement', anonymous=True)
 
@@ -53,25 +53,38 @@ class Robot:
         quat = goal_pose.orientation
         q = [quat.x, quat.y, quat.z, quat.w]
         goal_rots = euler_from_quaternion(q) # 0=yaw 1=pitch 2=roll
-        goal_rot = goal_rots[0]
+        goal_rot = goal_rots[0] # this will be the final yaw
 
         # determine angle to spin from start to line to goal
         # relative to the global coordinate system (so 0-2pi)
         path_angle = math.atan2(  (goal_posn.y - self.py) , (goal_posn.x - self.px))
+        # print("goal x = ", goal_posn.x)
+        # print("goal y = ", goal_posn.y)
+        # print("goal rot = ", goal_rot)
+        #
+        # print("my x = ", self.px)
+        # print("my y = ", self.py)
+        # print("my rot = ", self.yaw)
+        #
+        # print("path_angle = ", (path_angle*180)/math.pi)
 
         # rotate to face the goal vector
-
         self.rotate(path_angle - self.yaw)
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
         goal_dist = math.sqrt( pow((goal_posn.x - self.px),2) + pow((goal_posn.y - self.py), 2)  )
 
+        print("goal dist = ", goal_dist)
+
         # drive in a striaght line the appropriate distance
         self.drive_straight(self.speed, goal_dist)
 
-        # rotate to satisfy the required final pose
-        self.rotate(goal_rot - self.yaw) #note: yaw *should be* path_angle
+        # # rotate to satisfy the required final pose
+        # self.rotate(goal_rot - self.yaw) #note: yaw *should be* path_angle
+        msg = Twist()
+        self.cmd_pub.publish(msg)
+
 
 
 
@@ -119,10 +132,13 @@ class Robot:
             # we want negative rotation
             self.omega = -1 * abs(angular_vel)
 
-        while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
+        while abs(abs(angle) - abs(self.yaw)) > 0.1: #about a 3deg threshold
+            # print("angle = ",angle)
+            # print("my yaw =", self.yaw)
+            # print(angle - self.yaw)
             msg = Twist()
-            # @TODO going to guess angular.x corresponds to yaw, need to verify
-            msg.angular.x = self.omega
+            # angular.z corresponds to yaw. I dun messed up
+            msg.angular.z = self.omega
             self.cmd_pub.publish(msg)
 
 
