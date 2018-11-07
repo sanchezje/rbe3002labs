@@ -53,23 +53,11 @@ class Robot:
 
         q = [quat.x, quat.y, quat.z, quat.w]
         goal_rots = euler_from_quaternion(q) # 0=yaw 1=pitch 2=roll
-        print("goal_rots = ", goal_rots)
         goal_rot = goal_rots[2] # this will be the final yaw
 
         # determine angle to spin from start to line to goal
         # relative to the global coordinate system (so -pi to pi because atan2)
         path_angle = math.atan2(  (goal_posn.y - self.py) , (goal_posn.x - self.px))
-
-        print("goal x = ", goal_posn.x)
-        print("goal y = ", goal_posn.y)
-        print("goal rot = ", goal_rot*180/math.pi)
-
-
-        print("my x = ", self.px)
-        print("my y = ", self.py)
-        print("my rot = ", self.yaw*180/math.pi)
-
-        print("path_angle = ", (path_angle*180)/math.pi)
 
         # rotate to face the goal vector
         diff = path_angle - self.yaw
@@ -142,12 +130,6 @@ class Robot:
         self.cmd_pub.publish(msg)
 
         while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
-        # while abs(abs(angle) - abs(self.yaw)) > 0.05: #about a 3deg threshold
-            print("target = ", angle)
-            print("my yaw =", self.yaw)
-            print(angle - self.yaw)
-
-
 
 
     def odom_callback(self, msg):
@@ -173,8 +155,5 @@ if __name__ == '__main__':
     try:
         rospy.spin() #exist always, only do things if
         #recieve messages to do so via callbacks
-        # x = r.yaw
-        # print(x)
-
     except:
         pass
