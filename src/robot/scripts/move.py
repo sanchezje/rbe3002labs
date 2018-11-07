@@ -13,16 +13,13 @@ from tf.transformations import euler_from_quaternion
 
 
 class Robot:
+    # omega = None
 
     def __init__(self):
         """"
         Set up the node here
 
         """
-        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
-        self.goal_sub = rospy.Subscriber('goal', PoseStamped, self.nav_to_pose)
-        self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
-        self.node = rospy.init_node('movememt', anonymous=True)
 
         self.px = 0
         self.py = 0
@@ -31,6 +28,11 @@ class Robot:
         self.yaw = 0
         self.speed = 0.1 # 10cm/s linear velocity
         self.omega = 1 # 1 rad/s angular velocity
+
+        self.odom_sub = rospy.Subscriber('odom', Odometry, self.odom_callback)
+        self.goal_sub = rospy.Subscriber('goal', PoseStamped, self.nav_to_pose)
+        self.cmd_pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
+        self.node = rospy.init_node('movement', anonymous=True)
 
 
 
@@ -63,7 +65,7 @@ class Robot:
 
         # determine euclidian distance from start to goal
         # using pythagorean theorem
-        goal_dist = sqrt( (goal_posn.x - self.px)^2 + (goal_posn.y - self.py)^2  )
+        goal_dist = math.sqrt( pow((goal_posn.x - self.px),2) + pow((goal_posn.y - self.py), 2)  )
 
         # drive in a striaght line the appropriate distance
         self.drive_straight(speed, goal_dist)
@@ -107,13 +109,15 @@ class Robot:
 
         delta_angle = angle - self.yaw
 
+        angular_vel = self.omega
+
         if delta_angle > 0:
             # we want positive rotation
-            self.omega = abs(self.omega)
+            self.omega = abs(angular_vel)
 
         if delta_angle < 0:
             # we want negative rotation
-            self.omega = - abs(self.omega)
+            self.omega = -1 * abs(angular_vel)
 
         while abs(angle - self.yaw) > 0.05: #about a 3deg threshold
             msg = Twist()
